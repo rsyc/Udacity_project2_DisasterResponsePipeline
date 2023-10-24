@@ -2,6 +2,8 @@ import re
 import json
 import plotly
 import pandas as pd
+import numpy as np
+import seaborn as sns
 
 import nltk
 nltk.download(['punkt', 'wordnet', 'stopwords'])
@@ -17,7 +19,8 @@ from sklearn.externals import joblib
 from sqlalchemy import create_engine
 from sklearn.base import BaseEstimator, TransformerMixin
 
-
+from app.WordCloud_process import wordcloud_generator
+import plotly.express as px
 
 app = Flask(__name__)
 
@@ -69,14 +72,11 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
     '''
     def get_genre_data(self, x):
         '''
-        This function separates genre data and turn the one column
-        of genre (in text) to columns of dummies each representing
-        one gerne. These columns then will be used in the model for
-        training and test.
+        This function separates genre data and turns it. 
         '''
         genres = [record[1] for record in x]
-        genre_dummies = pd.get_dummies(genres)
-        return genre_dummies
+        replaced_bynum = [1 if x=='direct' else 2 if x=='news' else 3 for x in genres]
+        return replaced_bynum 
    
 
     def fit(self, x, y=None):
@@ -86,7 +86,7 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
         # apply function to all values in X
         X_tagged = self.get_genre_data(X) 
 
-        return pd.DataFrame(X_tagged)
+        return pd.DataFrame(X_tagged) # np.array(X_tagged).reshape(-1, 1)
 
 class TextExtractor(BaseEstimator, TransformerMixin):
     '''
@@ -115,6 +115,8 @@ class TextExtractor(BaseEstimator, TransformerMixin):
 engine = create_engine('sqlite:///data/DisasterResponse.db')
 df = pd.read_sql_table('processedData', engine)
 
+
+
 # load model
 model = joblib.load("./models/classifier.pkl")
 
@@ -129,6 +131,43 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
+    cat_names = df['related'].unique()
+    plot_data = df.drop(['id', 'message', 'original'], axis=1).groupby(by=['genre']).mean()#.plot(kind='bar').get_figure()
+    # plot bar graph
+    fig2 = px.bar(plot_data, title="percentage of values for each category")
+    #fig2 = result.set_index(["genre","related"])['count'].unstack().plot.bar()
+    #fig2 = sns.countplot(df, x="related", stat="percent")#px.histogram(df, x="related")
+    
+    Direct_group = df[df['genre']=='direct']
+    News_group = df[df['genre']=='news']
+    Social_group = df[df['genre']=='social']
+    
+    Direct_wordcloud = wordcloud_generator(Direct_group, 'message')
+    News_wordcloud = wordcloud_generator(News_group, 'message')
+    Social_wordcloud = wordcloud_generator(Social_group, 'message')
+    
+    Direct_wordcloud_fig = px.imshow(Direct_wordcloud.to_image())
+    News_wordcloud_fig = px.imshow(News_wordcloud.to_image())
+    Social_wordcloud_fig = px.imshow(Social_wordcloud.to_image())
+    
+    Direct_wordcloud_fig.update_layout(
+        title=dict(text='150 most common words in Disater Scenario with genre=Direct', x=0.5),
+        xaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
+        yaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
+        hovermode=False
+    )
+    News_wordcloud_fig.update_layout(
+        title=dict(text='150 most common words in Disater Scenario with genre=News', x=0.5),
+        xaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
+        yaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
+        hovermode=False
+    )
+    Social_wordcloud_fig.update_layout(
+        title=dict(text='150 most common words in Disater Scenario with genre=Social', x=0.5),
+        xaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
+        yaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
+        hovermode=False
+    )
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -151,7 +190,10 @@ def index():
             }
         }
     ]
-    
+    graphs.append(fig2)
+    graphs.append(Direct_wordcloud_fig) 
+    graphs.append(News_wordcloud_fig)
+    graphs.append(Social_wordcloud_fig)
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
@@ -165,6 +207,8 @@ def index():
 def go():
     # save user input in query
     query = request.args.get('query', '') 
+    query = query.split(", ")
+    print(query)
 
     # use model to predict classification for query
     classification_labels = model.predict([query])[0]

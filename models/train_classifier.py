@@ -19,6 +19,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
+#from sklearn.preprocessing import LabelEncoder
+#from sklearn.preprocessing import OrdinalEncoder
 
 def load_data(database_filepath):
     '''
@@ -35,6 +37,8 @@ def load_data(database_filepath):
     X = df[['message','genre']].values
     Y = df.drop(['id', 'message', 'original', 'genre'], axis=1).values
     category_names = df.drop(['id', 'message', 'original', 'genre'], axis=1).columns 
+    #en = OrdinalEncoder()
+    #print(np.unique(en.fit_transform(np.array(df['genre']).reshape(-1, 1))))
     
     return X, Y, category_names
     
@@ -77,14 +81,15 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
     '''
     def get_genre_data(self, x):
         '''
-        This function separates genre data and turn the one column
-        of genre (in text) to columns of dummies each representing
-        one gerne. These columns then will be used in the model for
-        training and test.
+        This function separates genre data and turn this categorical 
+        column of genre (in text) to a numerical column: each number 
+        representing one gerne. This column then will be used in the model 
+        for training and test.
         '''
         genres = [record[1] for record in x]
-        genre_dummies = pd.get_dummies(genres)
-        return genre_dummies
+        #genre_dummies = pd.get_dummies(genres)
+        replaced_bynum = [1 if x=='direct' else 2 if x=='news' else 3 for x in genres]
+        return replaced_bynum #return genres
    
 
     def fit(self, x, y=None):
@@ -93,8 +98,7 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
     def transform(self, X):
         # apply function to all values in X
         X_tagged = self.get_genre_data(X) 
-
-        return pd.DataFrame(X_tagged)
+        return pd.DataFrame(X_tagged) #np.array(X_tagged).reshape(-1, 1) #pd.DataFrame(X_tagged)
 
 class TextExtractor(BaseEstimator, TransformerMixin):
     '''
@@ -152,7 +156,8 @@ def build_model():
                     ('tfidf', TfidfTransformer())
                 ])),
                 ('genre_features', Pipeline([
-                    ('gen_ext', GenreExtractor())
+                    ('gen_ext', GenreExtractor()),
+                #    ('le' , OrdinalEncoder())
                 ]))            
              ])),
         #('emblance', Multilass_Balencer()),
@@ -161,11 +166,11 @@ def build_model():
     
     parameters = {
         'clf__estimator__max_features': ['log2', 'sqrt'],
-        'clf__estimator__n_estimators': [20, 30],
-        'clf__estimator__min_samples_leaf': [20, 30] 
+        'clf__estimator__n_estimators': [10, 20],
+        'clf__estimator__min_samples_leaf': [5, 20]
     }
 
-    cv = GridSearchCV(pipeline3, param_grid = parameters)
+    cv = GridSearchCV(pipeline3, param_grid = parameters, cv=2)
     
     return cv
 
