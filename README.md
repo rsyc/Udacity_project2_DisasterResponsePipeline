@@ -55,6 +55,12 @@ For the wordcloud to work you need to install pillow and upgrade wordcloud, pip,
 
 ## App description:
 
+Search bar:
+
+- Simply type your message and the genre (a choice of "direct", "news", "social") separated by " | ".
+
+Graphs:
+
 1) The first graph is a visualization of the Distribution of Message Genres. It shows the number of counts of each genre. 
 
 2) The second graph is the representation of the percentage of True values (==1) for each category within each genre. As you may see from the plot (for our dataset) the percentage of category named "related" is the highest (if you hover over each colored section you can see the information regarding variable name, genre, and the normalized count/percentage value). 
@@ -67,3 +73,6 @@ For the wordcloud to work you need to install pillow and upgrade wordcloud, pip,
 	- The word cloud for the genre=direct shows that the most frequent words used in this genre include "Please", "help", "need", "Thank", "people", "want", "know", and "information". This shows that in these "direct" messages people are "directly" asking for help and/or some information.
     - The word cloud for the genre=news shows that the most frequent words used in this genre include "people", "area", "water", "said", "country", "region", "government", "food", and "flood", which reflects news of some problems/concerns at regions and/or countries regarding water, food, flood etc.
     - The word cloud for the genre=seocial shows that the most frequent words used in this genre include "sandy", "Co (possibly company)", "earthquake", "Haiti", "Santiago", and "storm". This word cloud, as oppose to the other two word clouds, does not highlight a specific topic. Whereas it seems that this word cloud represent genral messages that people have given.
+    
+## Link to Git repository:
+you can access the codes and data through my [git repo](https://github.com/rsyc/Udacity_project2_DisasterResponsePipeline.git)
