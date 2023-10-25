@@ -102,6 +102,9 @@ def save_data(df, database_filename):
     df.to_sql('processedData', engine, index=False, if_exists='replace')
 
 def main():
+    '''
+    The main function that runs as soon as we run this python code
+    '''
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]

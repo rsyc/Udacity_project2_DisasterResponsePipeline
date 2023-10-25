@@ -72,7 +72,10 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
     '''
     def get_genre_data(self, x):
         '''
-        This function separates genre data and turns it. 
+        This function separates genre data and turns this categorical 
+        column of genre (in text) to a numerical column: each number 
+        representing one gerne. This column then will be used in the model 
+        for training and test. 
         '''
         genres = [record[1] for record in x]
         replaced_bynum = [1 if x=='direct' else 2 if x=='news' else 3 for x in genres]
@@ -80,9 +83,21 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
    
 
     def fit(self, x, y=None):
+        '''
+        The fit function of the transformer.
+        The function does the fitting. For our class this function does not
+        do anything speciall. Most of work is done in the transformation. 
+        input: x variables
+        output: self
+        '''
         return self
 
     def transform(self, X):
+        '''
+        Transformation function
+        Input: X variable
+        output: dataframe
+        '''
         # apply function to all values in X
         X_tagged = self.get_genre_data(X) 
 
@@ -102,9 +117,21 @@ class TextExtractor(BaseEstimator, TransformerMixin):
       
 
     def fit(self, x, y=None):
+        '''
+        The fit function of the transformer.
+        The function does the fitting. For our class this function does not
+        do anything speciall. Most of work is done in the transformation. 
+        input: x variables
+        output: self
+        '''
         return self
 
     def transform(self, X):
+        '''
+        Transformation function
+        Input: X variable
+        output: dataframe
+        '''
         # apply function to all values in X
         X_tagged = self.get_text_data(X) 
 
@@ -131,25 +158,29 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
-    cat_names = df['related'].unique()
-    plot_data = df.drop(['id', 'message', 'original'], axis=1).groupby(by=['genre']).mean()#.plot(kind='bar').get_figure()
-    # plot bar graph
+    # Count number of tagged cases in each category and show them in a bar chart after 
+    # grouping by their genre
+    plot_data = df.drop(['id', 'message', 'original'], axis=1).groupby(by=['genre']).mean() 
+    # second bar graph
     fig2 = px.bar(plot_data, title="percentage of values for each category")
-    #fig2 = result.set_index(["genre","related"])['count'].unstack().plot.bar()
-    #fig2 = sns.countplot(df, x="related", stat="percent")#px.histogram(df, x="related")
-    
+        
+    # separating dataframe based on different genre 
     Direct_group = df[df['genre']=='direct']
     News_group = df[df['genre']=='news']
     Social_group = df[df['genre']=='social']
     
+    # calling wordcloud_generator function for each genre-separated dataframe
+    # to run steps on the messages in each group and generate a word cloud for each.
     Direct_wordcloud = wordcloud_generator(Direct_group, 'message')
     News_wordcloud = wordcloud_generator(News_group, 'message')
     Social_wordcloud = wordcloud_generator(Social_group, 'message')
     
+    # Visualize the word cloud for each dataframe
     Direct_wordcloud_fig = px.imshow(Direct_wordcloud.to_image())
     News_wordcloud_fig = px.imshow(News_wordcloud.to_image())
     Social_wordcloud_fig = px.imshow(Social_wordcloud.to_image())
     
+    # defining the layout for each word cloud
     Direct_wordcloud_fig.update_layout(
         title=dict(text='150 most common words in Disater Scenario with genre=Direct', x=0.5),
         xaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
@@ -168,6 +199,8 @@ def index():
         yaxis={'showgrid': False, 'showticklabels': False, 'zeroline': False},
         hovermode=False
     )
+    
+    
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -190,10 +223,13 @@ def index():
             }
         }
     ]
+    
+    # Appending figures that are generated above to the graphs
     graphs.append(fig2)
     graphs.append(Direct_wordcloud_fig) 
     graphs.append(News_wordcloud_fig)
     graphs.append(Social_wordcloud_fig)
+    
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
@@ -207,7 +243,7 @@ def index():
 def go():
     # save user input in query
     query = request.args.get('query', '') 
-    query = query.split(", ")
+    query = query.split("| ")
     print(query)
 
     # use model to predict classification for query

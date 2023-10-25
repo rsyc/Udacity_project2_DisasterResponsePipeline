@@ -81,7 +81,7 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
     '''
     def get_genre_data(self, x):
         '''
-        This function separates genre data and turn this categorical 
+        This function separates genre data and turns this categorical 
         column of genre (in text) to a numerical column: each number 
         representing one gerne. This column then will be used in the model 
         for training and test.
@@ -93,9 +93,21 @@ class GenreExtractor(BaseEstimator, TransformerMixin):
    
 
     def fit(self, x, y=None):
+        '''
+        The fit function of the transformer.
+        The function does the fitting. For our class this function does not
+        do anything speciall. Most of work is done in the transformation. 
+        input: x variables
+        output: self
+        '''
         return self
 
     def transform(self, X):
+        '''
+        Transformation function
+        Input: X variable
+        output: dataframe
+        '''
         # apply function to all values in X
         X_tagged = self.get_genre_data(X) 
         return pd.DataFrame(X_tagged) #np.array(X_tagged).reshape(-1, 1) #pd.DataFrame(X_tagged)
@@ -114,9 +126,21 @@ class TextExtractor(BaseEstimator, TransformerMixin):
       
 
     def fit(self, x, y=None):
+        '''
+        The fit function of the transformer.
+        The function does the fitting. For our class this function does not
+        do anything speciall. Most of work is done in the transformation. 
+        input: x variables
+        output: self
+        '''
         return self
 
     def transform(self, X):
+        '''
+        Transformation function
+        Input: X variable
+        output: dataframe
+        '''
         # apply function to all values in X
         X_tagged = self.get_text_data(X) 
 
@@ -148,6 +172,7 @@ def build_model():
     Input: Non
     Output: a tuned and optimized classification model (cv)
     '''
+    # pipeline:
     pipeline3 = Pipeline([
         ('features', FeatureUnion([
                  ('text_features', Pipeline([
@@ -164,12 +189,14 @@ def build_model():
         ('clf', MultiOutputClassifier(RandomForestClassifier()))  # BalancedRandomForestClassifier(replacement=True)
     ])
     
+    # Parameters to tune the model in a gridsearchCV
     parameters = {
         'clf__estimator__max_features': ['log2', 'sqrt'],
         'clf__estimator__n_estimators': [10, 20],
         'clf__estimator__min_samples_leaf': [5, 20]
     }
 
+    # tuning the model using a GridSearch
     cv = GridSearchCV(pipeline3, param_grid = parameters, cv=2)
     
     return cv
@@ -185,6 +212,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
         category_names: names of the calsses/categoreis
     Output: Non, it print out the F1-score, precision, and recall
     '''
+    # Predict classes for the test data
     y_pred_cv = model.predict(X_test)
     # iterating through the columns and report the f1 score, 
     # precision and recall for each output category of the dataset.
@@ -193,11 +221,21 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    '''
+    This function saved the generated and tuned model into a pickle format.
+    Input: 
+        model: The tuned ML model
+        model_filepath: the path to where the model to be saved and the name of the file 
+    Output: Non
+    '''
     # Export your model as a pickle file and save it to disk
     pickle.dump(model, open(model_filepath, 'wb'))
 
 
 def main():
+    '''
+    The main function that runs when we run this python file
+    '''
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
